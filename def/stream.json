@@ -6,21 +6,6 @@
         "auth": true,
         "params":
         {
-            "follow":
-            {
-                "type": "List<ID>",
-                "choice": "req"
-            },
-            "track":
-            {
-                "type": "List<String>",
-                "choice": "req"
-            },
-            "locations":
-            {
-                "type": "Location",
-                "choice": "req"
-            }
         }
     }
 }

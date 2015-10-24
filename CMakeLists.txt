@@ -34,6 +34,33 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   )
 
+set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+set(DEF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/def)
+set(GEN_PY ${CMAKE_CURRENT_SOURCE_DIR}/gen.py)
+
+list(APPEND QUACKSTWIT_REST_DEFS
+  ${DEF_DIR}/rest/statuses.json)
+list(APPEND QUACKSTWIT_STREAM_DEFS
+  ${DEF_DIR}/stream.json)
+
+set(QUACKSTWIT_REST_OUT
+  ${SRC_DIR}/rest.cpp
+  ${INC_DIR}/rest.h)
+add_custom_command(
+  OUTPUT ${QUACKSTWIT_REST_OUT}
+  DEPENDS ${QUACKSTWIT_REST_DEFS}
+  COMMAND python ${GEN_PY} -n Quacks::Twit -o rest ${QUACKSTWIT_REST_DEFS})
+
+set(QUACKSTWIT_STREAM_OUT
+  ${SRC_DIR}/stream.cpp
+  ${INC_DIR}/stream.h)
+add_custom_command(
+  OUTPUT ${QUACKSTWIT_STREAM_OUT}
+  DEPENDS ${QUACKSTWIT_STREAM_DEFS}
+  COMMAND python ${GEN_PY} -n Quacks::Twit -o stream ${QUACKSTWIT_STREAM_DEFS})
+
 list(APPEND QUACKSTWIT_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/include/accountStore.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/accountStore.cpp

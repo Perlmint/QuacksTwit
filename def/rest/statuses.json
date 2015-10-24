@@ -9,12 +9,83 @@
         {
             "status":
             {
-                "type": "String",
+                "type": "str",
                 "required": true
             },
             "in_reply_to_status_id":
             {
                 "type": "ID"
+            },
+            "possibly_sensitive":
+            {
+                "type": "bool",
+                "desc": "Sensitive contents"
+            },
+            "latitude":
+            {
+                "name": "lat",
+                "type": "dbl"
+            },
+            "longitude":
+            {
+                "name": "long",
+                "type": "dbl"
+            },
+            "place_id":
+            {
+                "type": "str"
+            },
+            "display_coordinates":
+            {
+                "type": "bool"
+            },
+            "trim_user":
+            {
+                "type": "bool"
+            },
+            "media_ids":
+            {
+                "type": "ID",
+                "desc": "@ref media::upload"
+            }
+        }
+    },
+    "statuses/home_timeline":
+    {
+        "description": "Recent tweets on home timeline",
+        "limit": "15 per 15min",
+        "request": "GET",
+        "url": "https://api.twitter.com/1.1/statuses/home_timeline.json",
+        "auth": true,
+        "params":
+        {
+            "count":
+            {
+                "type": "uint"
+            },
+            "since_id":
+            {
+                "type": "ID"
+            },
+            "max_id":
+            {
+                "type": "ID"
+            },
+            "trim_user":
+            {
+                "type": "bool"
+            },
+            "exclude_replies":
+            {
+                "type": "bool"
+            },
+            "contributor_details":
+            {
+                "type": "bool"
+            },
+            "include_entities":
+            {
+                "type": "bool"
             }
         }
     }

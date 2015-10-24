@@ -46,7 +46,7 @@ int main(int argc, const char *argv[])
 
   Quacks::Twit::statuses::home_timeline timeline;
   timeline.account = accounts.at(i);
-  timeline(callback);
+  timeline();
 
   cv.wait(lock);
   return 0;
