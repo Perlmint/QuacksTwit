@@ -1,0 +1,21 @@
+{
+    "statuses/update":
+    {
+        "description": "Post new status",
+        "request": "POST",
+        "url": "https://api.twitter.com/1.1/statuses/update.json",
+        "auth": true,
+        "params":
+        {
+            "status":
+            {
+                "type": "String",
+                "required": true
+            },
+            "in_reply_to_status_id":
+            {
+                "type": "ID"
+            }
+        }
+    }
+}
