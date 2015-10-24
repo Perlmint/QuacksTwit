@@ -11,7 +11,7 @@ namespace Quacks
   {
     class Account;
 
-    class IAccountStore
+    class IAccountStore : public std::enable_shared_from_this<IAccountStore>
     {
     public:
       using CreatingAccountResultCallback =
