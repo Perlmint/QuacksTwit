@@ -12,3 +12,11 @@ C++11 supported compiler
 OSX 10.6+ (System Account feature)  
 iOS 7+ (System Account feature)  
 curl available system
+
+## Code generation
+
+Twitter API functions will be generated before compiling.  
+API Definitions are in the `def`.
+
+## CLI
+`QuacksTwitCli` is a command line tool for simple testing.
