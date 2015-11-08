@@ -5,6 +5,7 @@
         "request": "POST",
         "url": "https://api.twitter.com/1.1/statuses/update.json",
         "auth": true,
+        "ret": "str",
         "params":
         {
             "status":
@@ -57,6 +58,7 @@
         "request": "GET",
         "url": "https://api.twitter.com/1.1/statuses/home_timeline.json",
         "auth": true,
+        "ret": "twit[]",
         "params":
         {
             "count":

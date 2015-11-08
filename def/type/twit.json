@@ -1,0 +1,6 @@
+{
+    "created_at": { "type": "date" },
+    "id_str": { "type": "ID", "alias": "twit_id" },
+    "text": { "type": "str" },
+    "user": { "type": "user" }
+}

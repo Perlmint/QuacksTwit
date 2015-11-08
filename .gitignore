@@ -3,8 +3,7 @@ CMakeFiles
 Makefile
 cmake_install.cmake
 install_manifest.txt
-src/rest.cpp
-src/stream.cpp
-include/rest.h
-include/stream.h
+src/gen
+include/gen
+def/ref
 build

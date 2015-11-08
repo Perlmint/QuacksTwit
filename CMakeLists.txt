@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 2.6)
 
 project(QuacksTwit)
 
+if(POLICY CMP0054)
+  cmake_policy(SET CMP0054 NEW)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(compiler_option)
 
@@ -30,10 +34,6 @@ else()
   endif()
 endif()
 
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  )
-
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
@@ -45,33 +45,44 @@ list(APPEND QUACKSTWIT_REST_DEFS
 list(APPEND QUACKSTWIT_STREAM_DEFS
   ${DEF_DIR}/stream.json)
 
-set(QUACKSTWIT_REST_OUT
-  ${SRC_DIR}/rest.cpp
-  ${INC_DIR}/rest.h)
-add_custom_command(
-  OUTPUT ${QUACKSTWIT_REST_OUT}
-  DEPENDS ${QUACKSTWIT_REST_DEFS}
-  COMMAND python ${GEN_PY} -n Quacks::Twit -o rest ${QUACKSTWIT_REST_DEFS})
+include_directories(
+  ${INC_DIR}
+  ${SRC_DIR}
+  )
 
-set(QUACKSTWIT_STREAM_OUT
-  ${SRC_DIR}/stream.cpp
-  ${INC_DIR}/stream.h)
-add_custom_command(
-  OUTPUT ${QUACKSTWIT_STREAM_OUT}
-  DEPENDS ${QUACKSTWIT_STREAM_DEFS}
-  COMMAND python ${GEN_PY} -n Quacks::Twit -o stream ${QUACKSTWIT_STREAM_DEFS})
+macro(gen NAME)
+  set(GEN_OUT
+    ${SRC_DIR}/gen/${NAME}.cpp
+    ${INC_DIR}/gen/${NAME}.h)
+  if("${NAME}" STREQUAL "type")
+    set(GEN_OPT -t -o type)
+  else()
+    set(GEN_OPT -o ${NAME})
+  endif()
+  add_custom_command(
+    OUTPUT ${GEN_OUT}
+    DEPENDS ${ARGN} ${GEN_PY}
+    COMMAND python ${GEN_PY} ${GEN_OPT} -n Quacks::Twit ${ARGN})
+  list(APPEND QUACKSTWIT_SRCS ${GEN_OUT})
+endmacro(gen)
+
+gen(rest
+  ${DEF_DIR}/rest/statuses.json)
+gen(stream
+  ${DEF_DIR}/stream.json)
+gen(type
+  ${DEF_DIR}/type/twit.json
+  ${DEF_DIR}/type/user.json)
 
 list(APPEND QUACKSTWIT_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/include/accountStore.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/accountStore.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/account.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/account.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/stream.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/stream.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/rest.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/rest.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/request.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/request.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/request.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/parseUtil.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/color.h)
 
 if("${QUACKSTWIT_BACKEND}" STREQUAL "Accounts")
   list(APPEND QUACKSTWIT_SRCS
