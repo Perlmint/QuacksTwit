@@ -410,10 +410,11 @@ def gen_api(args):
             out_header.writeln('{{')
             out_header.scope_in()
 
-        for header in headers_pub:
-            if isStdHeader(header):
+        for header in headers:
+            if not header.endswith('_internal'):
                 continue
-            out_header.writeln('class {0};', header)
+            out_header.writeln('class {0};',
+                               header.replace('_internal', ''))
 
         prev_ns = None
 
