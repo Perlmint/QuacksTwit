@@ -64,6 +64,7 @@ endif()
 
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(EXT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext)
 
 set(DEF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/def)
 set(GEN_PY ${CMAKE_CURRENT_SOURCE_DIR}/gen.py)
@@ -76,6 +77,7 @@ list(APPEND QUACKSTWIT_STREAM_DEFS
 include_directories(
   ${INC_DIR}
   ${SRC_DIR}
+  ${EXT_DIR}
   )
 
 macro(gen NAME)
