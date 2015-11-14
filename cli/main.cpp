@@ -78,11 +78,6 @@ int main(int argc, const char *argv[])
 
   std::unique_lock<std::mutex> lock(mtx);
 
-  auto callback =[&](std::shared_ptr<Quacks::Twit::Account> account, int code, const std::string &ret) {
-    std::cout << code << std::endl << ret << std::endl;
-    cv.notify_all();
-  };
-
   Quacks::Twit::statuses::home_timeline timeline;
   timeline.account = accounts.at(i);
   timeline([](std::shared_ptr<Quacks::Twit::Account> account, const std::deque<Quacks::Twit::twit> &ret) {
