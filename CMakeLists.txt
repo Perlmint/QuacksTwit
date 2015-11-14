@@ -108,9 +108,7 @@ list(APPEND QUACKSTWIT_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/include/accountStore.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/accountStore.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/account.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/account.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/request.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/request.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/parseUtil.h
   ${CMAKE_CURRENT_SOURCE_DIR}/include/color.h)
 
@@ -119,10 +117,11 @@ if("${QUACKSTWIT_BACKEND}" STREQUAL "Accounts")
     ${CMAKE_CURRENT_SOURCE_DIR}/src/apple/account.mm
     ${CMAKE_CURRENT_SOURCE_DIR}/src/apple/request.mm
     ${CMAKE_CURRENT_SOURCE_DIR}/src/apple/accountStore.mm)
-  list(REMOVE_ITEM QUACKSTWIT_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/account.cpp)
   list(APPEND QUACKSTWIT_LIBS ${ACCOUNTS_FW} ${SOCIAL_FW} ${DEFAULT_FW})
-else()
+elseif("${QUACKSTWIT_BACKEND}" STREQUAL "CURL")
+  list(APPEND QUACKSTWIT_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/curl/account.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/curl/request.cpp)
 endif()
 
 add_library(QuacksTwit ${QUACKSTWIT_SRCS})
