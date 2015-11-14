@@ -128,9 +128,7 @@ add_library(QuacksTwit ${QUACKSTWIT_SRCS})
 target_link_libraries(QuacksTwit ${QUACKSTWIT_LIBS})
 
 set(QUACKSTWITCLI_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/cli/main.cpp)
-if(MSVC)
-  set(exe_option WIN32)
-elseif(APPLE)
+if(APPLE)
   set(exe_option MACOSX_BUNDLE)
 endif()
 
