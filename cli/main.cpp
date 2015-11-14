@@ -1,5 +1,7 @@
 #ifdef WIN32
 #include <Windows.h>
+#else
+#include <termios.h>
 #endif
 #include <iostream>
 #include <mutex>
