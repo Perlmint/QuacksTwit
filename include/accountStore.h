@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <functional>
+#include "config.h"
 
 namespace Quacks
 {
@@ -22,6 +23,7 @@ namespace Quacks
       virtual std::shared_ptr<Account> endCreateAccount(const std::string &pin) = 0;
     };
 
+#if defined(USE_CURL)
     class FileAccountStore : public IAccountStore
     {
     public:
@@ -40,15 +42,15 @@ namespace Quacks
     std::unique_ptr<Impl> impl;
     static std::map<std::string, std::shared_ptr<FileAccountStore>> storeMap;
     };
+#endif
 
-    #if defined( __APPLE__ ) || defined(ANDROID)
-  #define SYSTEM_ACCOUNT_STORE_EXISTS 1
+#if defined(USE_ACCOUNTS) || defined(USE_ANDROID)
     class SystemAccountStore : public IAccountStore
     {
     public:
-      #ifdef ANDROID
+#ifdef USE_ANDROID
       static void Init(void *context);
-      #endif
+#endif
       static SystemAccountStore *GetAccountStore();
       void requestAccess();
       bool waitGrant();
@@ -62,8 +64,6 @@ namespace Quacks
       static std::unique_ptr<SystemAccountStore> instance;
       std::unique_ptr<Impl> impl;
     };
-  #else
-    #define SYSTEM_ACCOUNT_STORE_EXISTS 0
-  #endif
+#endif
   }
 }

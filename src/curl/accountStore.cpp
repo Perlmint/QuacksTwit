@@ -53,7 +53,7 @@ namespace Quacks
 
     if (fp == nullptr)
       {
-      throw std::exception("File creation failed");
+        throw std::exception();
       }
 
     fclose(fp);

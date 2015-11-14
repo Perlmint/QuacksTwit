@@ -6,6 +6,7 @@
 #include <string>
 #include <memory>
 #include <condition_variable>
+#include "config.h"
 #include "accountStore.h"
 #include "account.h"
 #include "gen/rest.h"
@@ -16,7 +17,7 @@ void setStdinEcho(bool enable = true);
 int main(int argc, const char *argv[])
 {
   Quacks::Twit::IAccountStore *store = nullptr;
-#if SYSTEM_ACCOUNT_STORE_EXISTS
+#if defined(USE_ACCOUNTS) || defined(USE_ANDROID)
   Quacks::Twit::SystemAccountStore *systemStore = nullptr;
   systemStore = Quacks::Twit::SystemAccountStore::GetAccountStore();
 

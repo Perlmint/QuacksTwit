@@ -23,10 +23,12 @@ if(NOT USE_CURL)
     find_library(DEFAULT_FW Foundation)
     if(ACCOUNTS_FW AND SOCIAL_FW)
       set(QUACKSTWIT_BACKEND Accounts)
+      set(USE_ACCOUNTS ON)
     else()
       set(USE_CURL ON)
     endif()
   elseif(ANDROID)
+    set(USE_ANDROID ON)
   else()
     set(QUACKSTWIT_BACKEND CURL)
   endif()
@@ -104,24 +106,27 @@ gen(type
   ${DEF_DIR}/type/twit.json
   ${DEF_DIR}/type/user.json)
 
+configure_file(${INC_DIR}/config.h.in ${INC_DIR}/config.h)
+
 list(APPEND QUACKSTWIT_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/include/accountStore.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/accountStore.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/account.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/request.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/parseUtil.h
   ${CMAKE_CURRENT_SOURCE_DIR}/include/color.h)
 
-if("${QUACKSTWIT_BACKEND}" STREQUAL "Accounts")
+if(USE_ACCOUNTS)
   list(APPEND QUACKSTWIT_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/apple/account.mm
     ${CMAKE_CURRENT_SOURCE_DIR}/src/apple/request.mm
     ${CMAKE_CURRENT_SOURCE_DIR}/src/apple/accountStore.mm)
   list(APPEND QUACKSTWIT_LIBS ${ACCOUNTS_FW} ${SOCIAL_FW} ${DEFAULT_FW})
-elseif("${QUACKSTWIT_BACKEND}" STREQUAL "CURL")
+endif()
+if(USE_CURL)
   list(APPEND QUACKSTWIT_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/curl/account.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/curl/request.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/curl/request.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/curl/accountStore.cpp)
 endif()
 
 add_library(QuacksTwit ${QUACKSTWIT_SRCS})
