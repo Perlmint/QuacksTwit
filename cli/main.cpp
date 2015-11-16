@@ -19,7 +19,7 @@ void setStdinEcho(bool enable = true);
 int main(int argc, const char *argv[])
 {
   Quacks::Twit::IAccountStore *store = nullptr;
-#if defined(USE_ACCOUNTS) || defined(USE_ANDROID)
+#if defined(USE_APPLE) || defined(USE_ANDROID)
   Quacks::Twit::SystemAccountStore *systemStore = nullptr;
   systemStore = Quacks::Twit::SystemAccountStore::GetAccountStore();
 

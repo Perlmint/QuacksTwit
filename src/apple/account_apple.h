@@ -18,6 +18,6 @@ namespace Quacks
       void *getAccount() const;
     private:
       void *account;
-    }
+    };
   }
 }

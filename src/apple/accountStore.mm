@@ -1,5 +1,5 @@
 #include "accountStore.h"
-#include "account.h"
+#include "account_apple.h"
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
@@ -73,7 +73,7 @@ namespace Quacks
           auto list_begin = std::begin(accounts),
             list_end = std::end(accounts);
           auto pred = [](const std::shared_ptr<Account> &em, void *data) -> bool {
-            return em->getData() == data;
+            return std::dynamic_pointer_cast<AppleAccount>(em)->getAccount() == data;
           };
           accountsList.erase(std::remove_if(std::begin(accountsList), std::end(accountsList), [&](void *data) -> bool {
                 return std::find_if(list_begin, list_end, std::bind(pred, std::placeholders::_1, data)) != list_end;
@@ -84,13 +84,13 @@ namespace Quacks
           auto list_begin = std::begin(accountsList),
             list_end = std::end(accountsList);
           accounts.erase(std::remove_if(std::begin(accounts), std::end(accounts), [&](const std::shared_ptr<Account> &em) -> bool {
-                return std::find(list_begin, list_end, em->getData()) == list_end;
+                return std::find(list_begin, list_end, std::dynamic_pointer_cast<AppleAccount>(em)->getAccount()) == list_end;
               }), std::end(accounts));
         }
 
         for (const auto &account : accountsList)
         {
-          accounts.push_back(std::shared_ptr<Account>(new Account(account)));
+          accounts.push_back(std::shared_ptr<Account>(new AppleAccount(account)));
         }
 
         return accounts;
