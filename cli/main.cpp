@@ -2,6 +2,7 @@
 #include <Windows.h>
 #else
 #include <termios.h>
+#include <unistd.h>
 #endif
 #include <iostream>
 #include <mutex>
@@ -15,11 +16,101 @@
 #include "gen/twit.h"
 
 void setStdinEcho(bool enable = true);
+bool isFileExists(const std::string &filepath);
+
+#if defined(USE_APPLE) || defined(USE_ANDROID)
+std::shared_ptr<Quacks::Twit::IAccountStore> getSystemAccountStore();
+#endif
+#if defined(USE_CURL)
+std::shared_ptr<Quacks::Twit::IAccountStore> openFileAccountStore();
+#endif
 
 int main(int argc, const char *argv[])
 {
-  Quacks::Twit::IAccountStore *store = nullptr;
+  std::shared_ptr<Quacks::Twit::IAccountStore> store(nullptr);
+
+  int index = 0, selectedIndex = 0;
+  do
+  {
+    index = 0;
+    std::cout << "Select account store type" << std::endl;
+
 #if defined(USE_APPLE) || defined(USE_ANDROID)
+    std::cout << "  " << index << ": System Account Store" << std::endl;
+    ++index;
+#endif
+#if defined(USE_CURL)
+    std::cout << "  " << index << ": File Account Store" << std::endl;
+#endif
+    std::cout << "enter store type : ";
+    std::cin >> selectedIndex;
+  } while (index < selectedIndex);
+
+  index = 0;
+#if defined(USE_APPLE) || defined(USE_ANDROID)
+  if (selectedIndex == index)
+  {
+    store = getSystemAccountStore();
+  }
+  ++index;
+#endif
+#if defined(USE_CURL)
+  if (selectedIndex == index)
+  {
+    store = openFileAccountStore();
+  }
+#endif
+
+  auto accounts = store->storedAccounts();
+  std::shared_ptr<Quacks::Twit::Account> account(nullptr);
+  int count = 0, i;
+  do
+  {
+    for (const auto &account : accounts)
+    {
+      std::cout << count++ << " : " << account->username() << std::endl;
+    }
+    if (accounts.empty())
+    {
+      std::cout << "Accounts not found" << std::endl;
+    }
+    std::cout << count << " : Add new account" << std::endl;
+
+    std::cin >> i;
+    if (i == count)
+    {
+      // create new account
+    }
+  } while(i <= count);
+
+  if (!account)
+  {
+    account = accounts.at(i);
+  }
+
+  std::mutex mtx;
+  std::condition_variable cv;
+
+  std::unique_lock<std::mutex> lock(mtx);
+
+  Quacks::Twit::statuses::home_timeline timeline;
+  timeline.account = account;
+  timeline([&cv](std::shared_ptr<Quacks::Twit::Account> account, const std::deque<Quacks::Twit::twit> &ret) {
+    for (const auto &twit : ret)
+    {
+      std::cout << twit.user.screen_name << "(@" << twit.user.user_id << ")" << std::endl;
+      std::cout << twit.text << std::endl;
+    }
+    cv.notify_one();
+    });
+
+  cv.wait(lock);
+  return 0;
+}
+
+#if defined(USE_APPLE) || defined(USE_ANDROID)
+std::shared_ptr<Quacks::Twit::IAccountStore> getSystemAccountStore()
+{
   Quacks::Twit::SystemAccountStore *systemStore = nullptr;
   systemStore = Quacks::Twit::SystemAccountStore::GetAccountStore();
 
@@ -29,64 +120,52 @@ int main(int argc, const char *argv[])
     std::cout << "Access request rejected" << std::endl;
     if (trialCount++ > 3)
     {
-      return -1;
+      throw std::exception();
     }
     systemStore->requestAccess();
   }
 
-  store = systemStore;
-#else
+  return systemStore->shared_from_this();
+}
+#endif
+
+#if defined(USE_CURL)
+std::string getSecret(const std::string &message)
+{
+  std::string storePass;
+  setStdinEcho(false);
+  std::cout << message;
+  std::cin >> storePass;
+  setStdinEcho(true);
+  return storePass;
+}
+
+std::shared_ptr<Quacks::Twit::IAccountStore> openFileAccountStore()
+{
   std::string storePath;
-  if (argc > 2)
+  std::cout << "Account Store Path : ";
+  std::cin >> storePath;
+
+  std::shared_ptr<Quacks::Twit::FileAccountStore> store(nullptr);
+
+  if (!isFileExists(storePath))
   {
-    storePath = argv[1];
+    store = Quacks::Twit::FileAccountStore::CreateAccountStore(storePath, getSecret("Application Key : "), getSecret("Application Secret : "), getSecret("Account Store Pass : "));
   }
   else
   {
-    std::cout << "Account Store Path : ";
-    std::cin >> storePath;
-  }
-  Quacks::Twit::FileAccountStore &fileStore = Quacks::Twit::FileAccountStore::GetAccountStore(storePath);
+    store = Quacks::Twit::FileAccountStore::GetAccountStore(storePath);
 
-  while (fileStore.isLocked())
-  {
-    std::string storePass;
-    setStdinEcho(false);
-    std::cout << "Account Store Pass : ";
-    std::cin >> storePass;
-    setStdinEcho(true);
-    fileStore.unlock(storePass);
-  }
-  store = &fileStore;
-#endif
-
-  auto accounts = store->storedAccounts();
-  int i = 0;
-  for (const auto &account : accounts)
-  {
-    std::cout << i << " : " << account->username() << std::endl;
-  }
-  if (accounts.empty()) {
-    std::cout << "Accounts not found" << std::endl;
-    return -1;
+    while (store->isLocked())
+    {
+      std::string storePass = getSecret("Account Store Pass : ");
+      store->unlock(storePass);
+    }
   }
 
-  std::cin >> i;
-
-  std::mutex mtx;
-  std::condition_variable cv;
-
-  std::unique_lock<std::mutex> lock(mtx);
-
-  Quacks::Twit::statuses::home_timeline timeline;
-  timeline.account = accounts.at(i);
-  timeline([](std::shared_ptr<Quacks::Twit::Account> account, const std::deque<Quacks::Twit::twit> &ret) {
-
-  });
-
-  cv.wait(lock);
-  return 0;
+  return store;
 }
+#endif
 
 void setStdinEcho(bool enable)
 {
@@ -118,5 +197,14 @@ void setStdinEcho(bool enable)
   }
 
   (void)tcsetattr(STDIN_FILENO, TCSANOW, &tty);
+#endif
+}
+
+bool isFileExists(const std::string &filepath)
+{
+#ifdef WIN32
+  return PathFileExists(filepath.c_str());
+#else
+  return access(filepath.c_str(), R_OK | W_OK | F_OK) != -1;
 #endif
 }
