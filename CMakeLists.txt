@@ -51,10 +51,13 @@ set(QUACKSTWIT_INC_DIRS
   ${INC_DIR}
   ${SRC_DIR}
   ${EXT_DIR}/rapidjson/include
-  ${EXT_DIR}/McbDES/include)
+  ${EXT_DIR}/McbDES/include
+  ${EXT_DIR}/oauthlib/include)
 
 add_subdirectory(${EXT_DIR}/McbDES)
 list(APPEND QUACKSTWIT_LIBS McbDES)
+add_subdirectory(${EXT_DIR}/oauthlib)
+list(APPEND QUACKSTWIT_LIBS oauthlib)
 
 if(USE_CURL)
   message("-- Use CURL")
