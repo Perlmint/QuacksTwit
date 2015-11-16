@@ -9,6 +9,13 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(compiler_option)
 
+set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(EXT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext)
+
+set(DEF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/def)
+set(GEN_PY ${CMAKE_CURRENT_SOURCE_DIR}/gen.py)
+
 option(USE_CURL "Use Curl backend" OFF)
 option(USE_APPLE "Use Apple backend(Accounts, Social framework)" OFF)
 option(USE_ANDROID "Use Android backend" OFF)
@@ -40,11 +47,20 @@ if(USE_ANDROID)
   endif()
 endif()
 
+set(QUACKSTWIT_INC_DIRS
+  ${INC_DIR}
+  ${SRC_DIR}
+  ${EXT_DIR}/rapidjson/include
+  ${EXT_DIR}/McbDES/include)
+
+add_subdirectory(${EXT_DIR}/McbDES)
+list(APPEND QUACKSTWIT_LIBS McbDES)
+
 if(USE_CURL)
   message("-- Use CURL")
   set(QUACKSTWIT_BACKEND CURL)
   find_library(CURL_LIB curl libcurl
-    HINTS ${CMAKE_CURRENT_SOURCE_DIR}/ext/curl)
+    HINTS ${EXT_DIR}/curl)
   if(NOT CURL_LIB_FOUND)
     message("-- prebuilt CURL not found, try building from source")
     set(BUILD_CURL_EXE OFF)
@@ -62,31 +78,23 @@ if(USE_CURL)
     set(CURL_DISABLE_DICT ON)
     set(CURL_DISABLE_FILE ON)
     set(CMAKE_USE_LIBSSH2 OFF)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ext/curl)
+    add_subdirectory(${EXT_DIR}/curl)
     list(APPEND QUACKSTWIT_LIBS libcurl)
+    list(APPEND QUACKSTWIT_INC_DIRS
+      ${EXT_DIR}/curl/include
+      ${CMAKE_CURRENT_BINARY_DIR}/ext/curl/include/curl)
   else()
     message("-- prebuilt CURL found, Use it")
     list(APPEND QUACKSTWIT_LIBS ${CURL_LIB})
   endif()
 endif()
 
-set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set(INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-set(EXT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext)
-
-set(DEF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/def)
-set(GEN_PY ${CMAKE_CURRENT_SOURCE_DIR}/gen.py)
-
 list(APPEND QUACKSTWIT_REST_DEFS
   ${DEF_DIR}/rest/statuses.json)
 list(APPEND QUACKSTWIT_STREAM_DEFS
   ${DEF_DIR}/stream.json)
 
-include_directories(
-  ${INC_DIR}
-  ${SRC_DIR}
-  ${EXT_DIR}
-  )
+include_directories(${QUACKSTWIT_INC_DIRS})
 
 macro(gen NAME)
   set(GEN_OUT
