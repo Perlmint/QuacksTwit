@@ -40,7 +40,7 @@ namespace Quacks
 
       void unlock(const std::string &key)
       {
-        this->key = key;
+        this->storekey = key;
         read();
       }
     private:
@@ -56,12 +56,12 @@ namespace Quacks
         }
 
         McbDES mcbdes;
-        std::unique_ptr<unsigned char[]> keybuffer(new unsigned char[key.length()]),
-                      key2buffer(new unsigned char[key.length()]);
+        std::unique_ptr<unsigned char[]> keybuffer(new unsigned char[storekey.length()]),
+                      key2buffer(new unsigned char[storekey.length()]);
 
-        memcpy(keybuffer.get(), key.c_str(), key.length());
-        memcpy(key2buffer.get(), key.c_str(), key.length());
-        std::reverse(key2buffer.get(), key2buffer.get() + key.length());
+        memcpy(keybuffer.get(), storekey.c_str(), storekey.length());
+        memcpy(key2buffer.get(), storekey.c_str(), storekey.length());
+        std::reverse(key2buffer.get(), key2buffer.get() + storekey.length());
 
         mcbdes.McbSetKey1(keybuffer.get());
         mcbdes.McbSetKey2(key2buffer.get());
@@ -109,11 +109,11 @@ namespace Quacks
         }
 
         std::unique_ptr<unsigned char[]> keybuffer(new unsigned char[key.length()]),
-          key2buffer(new unsigned char[key.length()]);
+          key2buffer(new unsigned char[storekey.length()]);
 
-        memcpy(keybuffer.get(), key.c_str(), key.length());
-        memcpy(key2buffer.get(), key.c_str(), key.length());
-        std::reverse(key2buffer.get(), key2buffer.get() + key.length());
+        memcpy(keybuffer.get(), storekey.c_str(), storekey.length());
+        memcpy(key2buffer.get(), storekey.c_str(), storekey.length());
+        std::reverse(key2buffer.get(), key2buffer.get() + storekey.length());
 
         McbDES mcbdes;
 
