@@ -16,6 +16,14 @@ namespace Quacks
 
       std::string username() const;
       std::string identifier() const;
+      const std::string &getKey() const
+      {
+        return key;
+      }
+      const std::string &getSecret() const
+      {
+        return secret;
+      }
     private:
       const std::string key;
       const std::string secret;
