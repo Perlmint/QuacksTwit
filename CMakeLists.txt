@@ -9,28 +9,34 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(compiler_option)
 
-option(USE_CURL "Use Curl, Not using other system library(ex. Accounts for OSX)" OFF)
+option(USE_CURL "Use Curl backend" OFF)
+option(USE_APPLE "Use Apple backend(Accounts, Social framework)" OFF)
+option(USE_ANDROID "Use Android backend" OFF)
 
 find_program(PYTHON NAMES python)
 if(NOT PYTHON)
   message(FATAL_ERROR "Python is needed to generate data classes")
 endif()
 
-if(NOT USE_CURL)
-  if(APPLE)
+if(USE_APPLE)
+  if (APPLE)
     find_library(ACCOUNTS_FW Accounts)
     find_library(SOCIAL_FW Social)
     find_library(DEFAULT_FW Foundation)
     if(ACCOUNTS_FW AND SOCIAL_FW)
       set(QUACKSTWIT_BACKEND Accounts)
-      set(USE_ACCOUNTS ON)
     else()
-      set(USE_CURL ON)
+      message(FATAL_ERROR "Account Framework & Social Framework not found")
     endif()
-  elseif(ANDROID)
-    set(USE_ANDROID ON)
   else()
-    set(QUACKSTWIT_BACKEND CURL)
+    message(FATAL_ERROR "USE_APPLE Option only available on apple system(iOS / OSX)")
+  endif()
+endif()
+
+if(USE_ANDROID)
+  if(ANDROID)
+  else()
+    message(FATAL_ERROR "USE_ANDROID option only available on android system")
   endif()
 endif()
 
@@ -112,16 +118,18 @@ list(APPEND QUACKSTWIT_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/include/accountStore.h
   ${CMAKE_CURRENT_SOURCE_DIR}/include/account.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/request.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/request.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/parseUtil.h
   ${CMAKE_CURRENT_SOURCE_DIR}/include/color.h)
 
-if(USE_ACCOUNTS)
+if(USE_APPLE)
   list(APPEND QUACKSTWIT_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/apple/account.mm
     ${CMAKE_CURRENT_SOURCE_DIR}/src/apple/request.mm
     ${CMAKE_CURRENT_SOURCE_DIR}/src/apple/accountStore.mm)
   list(APPEND QUACKSTWIT_LIBS ${ACCOUNTS_FW} ${SOCIAL_FW} ${DEFAULT_FW})
 endif()
+
 if(USE_CURL)
   list(APPEND QUACKSTWIT_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/curl/account.cpp
@@ -133,7 +141,7 @@ add_library(QuacksTwit ${QUACKSTWIT_SRCS})
 target_link_libraries(QuacksTwit ${QUACKSTWIT_LIBS})
 
 set(QUACKSTWITCLI_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/cli/main.cpp)
-if(APPLE)
+if(USE_APPLE)
   set(exe_option MACOSX_BUNDLE)
 endif()
 
@@ -142,7 +150,7 @@ add_executable(QuacksTwitCli
   ${QUACKSTWITCLI_SRCS})
 target_link_libraries(QuacksTwitCli QuacksTwit)
 
-if(APPLE)
+if(USE_APPLE)
   set_target_properties(QuacksTwitCli PROPERTIES
     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/cli/Info.plist
     MACOSX_BUNDLE_GUI_IDENTIFIER "kr.shipduck.$(PRODUCT_NAME:rfc1034identifier)"

@@ -1,40 +1,31 @@
-#include "account.h"
+#include "account_apple.h"
 #import <Accounts/Accounts.h>
 
-namespace Quacks
+#define THIS_ACCOUNT static_cast<ACAccount *>(this->account)
+
+Quacks:::Twit::AppleAccount::AppleAccount(void *data)
+  : account(data)
 {
-  namespace Twit
-  {
-    class Account::Impl
-    {
-    public:
-      Impl(void *data)
-        : account(static_cast<ACAccount *>(data))
-      {
-      }
-
-      Impl()
-      {
-      }
-
-      std::string username() const
-      {
-        return account.username.UTF8String;
-      }
-
-      std::string identifier() const
-      {
-        return account.identifier.UTF8String;
-      }
-		
-      void *getData() const
-      {
-        return static_cast<void *>(account);
-      }
-    private:
-      ACAccount *account = nullptr;
-    };
-  }
+  [THIS_ACCOUNT retain];
 }
 
-#include "../account.cpp"
+Quacks::Twit::AppleAccount::~AppleAccount()
+{
+  [THIS_ACCOUNT release];
+}
+
+std::string Quacks:::Twit::AppleAccount::username() const
+{
+  return THIS_ACCOUNT.username.UTF8String;
+}
+
+std::string Quacks:::Twit::AppleAccount::identifier() const
+{
+  return THIS_ACCOUNT.identifier.UTF8String;
+}
+
+void *Quacks:::Twit::AppleAccount::getAccount() const
+{
+  return const_cast<void *>(static_cast<const void *>(THIS_ACCOUNT);
+}
+

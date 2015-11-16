@@ -26,11 +26,14 @@ namespace Quacks
         std::vector< std::pair<std::string, std::string> >
         RequestArgType;
 
-      void sendRequest(RequestType requestType,
-                       std::shared_ptr<Account> account,
-                       const std::string &url,
-                       const RequestArgType &args,
-                       const CallbackFuncType &callback);
+#define REQUEST_DEF(TYPE) \
+      void sendRequest(RequestType requestType, \
+                       std::shared_ptr<TYPE> account, \
+                       const std::string &url, \
+                       const RequestArgType &args, \
+                       const CallbackFuncType &callback)
+
+      REQUEST_DEF(Account);
     }
   }
 }

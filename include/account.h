@@ -10,19 +10,8 @@ namespace Quacks
     class Account : public std::enable_shared_from_this<Account>
     {
     public:
-      Account(void *data);
-      ~Account();
-      ///
-      /// @brief Get account data
-      /// It differs with backend
-      ///
-      void *getData() const;
-      std::string username() const;
-      std::string identifier() const;
-
-    private:
-      class Impl;
-      std::unique_ptr<Impl> impl;
+      virtual std::string username() const = 0;
+      virtual std::string identifier() const = 0;
     };
   }
 }

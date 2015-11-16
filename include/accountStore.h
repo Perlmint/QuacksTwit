@@ -44,7 +44,7 @@ namespace Quacks
     };
 #endif
 
-#if defined(USE_ACCOUNTS) || defined(USE_ANDROID)
+#if defined(USE_APPLE) || defined(USE_ANDROID)
     class SystemAccountStore : public IAccountStore
     {
     public:
