@@ -10,3 +10,4 @@ def/ref
 build
 *~
 .DS_Store
+ext/curl
