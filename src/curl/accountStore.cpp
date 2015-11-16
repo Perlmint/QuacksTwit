@@ -152,26 +152,26 @@ namespace Quacks
   }
 }
 
-Quacks::Twit::FileAccountStore &Quacks::Twit::FileAccountStore::GetAccountStore(const std::string &filename)
+std::shared_ptr<Quacks::Twit::FileAccountStore> Quacks::Twit::FileAccountStore::GetAccountStore(const std::string &filename)
 {
   auto itr = storeMap.find(filename);
   if (itr != storeMap.end())
   {
-    return *itr->second.get();
+    return itr->second;
   }
 
   std::shared_ptr<Quacks::Twit::FileAccountStore> newStore(new FileAccountStore(filename));
   storeMap.insert(std::make_pair(filename, newStore));
 
-  return *newStore;
+  return newStore;
 }
 
-Quacks::Twit::FileAccountStore &Quacks::Twit::FileAccountStore::CreateAccountStore(const std::string &filename, const std::string &key, const std::string &secret, const std::string &pass)
+std::shared_ptr<Quacks::Twit::FileAccountStore> Quacks::Twit::FileAccountStore::CreateAccountStore(const std::string &filename, const std::string &key, const std::string &secret, const std::string &pass)
 {
   std::shared_ptr<Quacks::Twit::FileAccountStore> newStore(new FileAccountStore(filename, key, secret, pass));
   storeMap.insert(std::make_pair(filename, newStore));
 
-  return *newStore;
+  return newStore;
 }
 
 std::vector< std::shared_ptr<Quacks::Twit::Account> > Quacks::Twit::FileAccountStore::storedAccounts()

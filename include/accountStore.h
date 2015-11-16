@@ -27,8 +27,8 @@ namespace Quacks
     class FileAccountStore : public IAccountStore
     {
     public:
-      static FileAccountStore &GetAccountStore(const std::string &filename);
-      static FileAccountStore &CreateAccountStore(const std::string &filename, const std::string &key, const std::string &secret, const std::string &pass);
+      static std::shared_ptr<FileAccountStore> GetAccountStore(const std::string &filename);
+      static std::shared_ptr<FileAccountStore> CreateAccountStore(const std::string &filename, const std::string &key, const std::string &secret, const std::string &pass);
       std::vector< std::shared_ptr<Account> > storedAccounts();
       void beginCreateAccount(const CreatingAccountResultCallback &callback);
       std::shared_ptr<Account> endCreateAccount(const std::string &pin);
