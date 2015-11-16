@@ -634,7 +634,7 @@ template <int n> void McbDESImpl<n>::McbCreateInitialPermutation(
  *	7th June      	2000	 - 	(V1.0) Creation (MCB)
  ****************************************************************************
  */
-template <int n> void McbDESImpl<n>::McbCreateSubKeys(
+template <int N> void McbDESImpl<N>::McbCreateSubKeys(
     const unsigned char Key[8], unsigned char SubKeys[16][6])
 {
    /*
@@ -874,7 +874,7 @@ template <int n> unsigned char McbDESImpl<n>::McbGetSBoxNibble(
  *	8th June      	2000	 - 	(V1.0) Creation (MCB)
  ****************************************************************************
  */
-template <int n> void McbDESImpl<n>::McbMapThroughSBox(
+template <int N> void McbDESImpl<N>::McbMapThroughSBox(
     const unsigned char Right[4], const unsigned char SubKey[6], 
     unsigned char output32[4])
 {
@@ -1011,13 +1011,13 @@ template <int n> void McbDESImpl<n>::McbMapThroughSBox(
  *	8th June      	2000	 - 	(V1.0) Creation (MCB)
  ****************************************************************************
  */
-template <int n> void McbDESImpl<n>::McbEncode64Bits(
+template <int N> void McbDESImpl<N>::McbEncode64Bits(
     const unsigned char in[8], unsigned char out[8], 
     const unsigned char SubKeys[16][6], int nEncrypt)
 {    
    /*
     *************************************************************************
-    * Table used for applying final permutation to the 64 bit block of data
+    * Table ussed for applying final permutation to the 64 bit block of data
     *************************************************************************
     */
 	static unsigned char tblIPmin1[64] = 
@@ -1194,7 +1194,7 @@ template <int n> void McbDESImpl<n>::McbEncode64Bits(
  *                                encryption.
  ****************************************************************************
  */
-template <int n> bool McbDESImpl<n>::McbDoDES(const unsigned char * lpIn, 
+template <int N> bool McbDESImpl<N>::McbDoDES(const unsigned char * lpIn,
     unsigned long cbIn, bool bEncrypt)
 {        
     bool bBuffTooSmall;
