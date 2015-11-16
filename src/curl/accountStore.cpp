@@ -26,11 +26,14 @@ namespace Quacks
       {
       }
 
-      Impl(const std::string &filename, const std::string &key, const std::string &secret)
+      Impl(const std::string &filename, const std::string &key, const std::string &secret, const std::string &pass)
         : storeFilePath(filename)
+        , storekey(pass)
         , key(key)
         , secret(secret)
+        , unlocked(true)
       {
+        write();
       }
 
       const std::vector< std::shared_ptr<Quacks::Twit::Account> > &getAccounts()
@@ -38,21 +41,31 @@ namespace Quacks
         return accounts;
       }
 
-      void unlock(const std::string &key)
+      bool unlock(const std::string &key)
       {
-        this->storekey = key;
-        read();
+        try
+        {
+          storekey = key;
+          read();
+          unlocked = true;
+        }
+        catch (std::exception e)
+        {
+          return false;
+        }
+
+        return true;
       }
     private:
       void read()
       {
         FILE *fp = nullptr;
-        FOPEN(fp, storeFilePath.c_str(), "r");
+        FOPEN(fp, storeFilePath.c_str(), "rb");
 
         // File notfound - ignore
         if (fp == nullptr)
         {
-          return;
+          throw std::exception();
         }
 
         McbDES mcbdes;
@@ -66,10 +79,10 @@ namespace Quacks
         mcbdes.McbSetKey1(keybuffer.get());
         mcbdes.McbSetKey2(key2buffer.get());
 
-        fseek(fp, SEEK_END, 0);
+        fseek(fp, 0, SEEK_END);
         unsigned long size = ftell(fp);
         std::unique_ptr<unsigned char[]> buffer(new unsigned char[size]);
-        fseek(fp, SEEK_SET, 0);
+        fseek(fp, 0, SEEK_SET);
         for (unsigned long i = 0; i < size;)
         {
           unsigned long readSize = std::min<unsigned int>(size - i, 256);
@@ -83,11 +96,14 @@ namespace Quacks
         }
 
         rapidjson::Document doc;
-        doc.Parse(reinterpret_cast<char *>(buffer.get()));
+        doc.Parse(reinterpret_cast<const char *>(mcbdes.McbGetPlainText()));
         accounts.clear();
         {
+            const auto &accountsInDoc = doc["accounts"];
+            key = doc["key"].GetString();
+            secret = doc["secret"].GetString();
             auto sharedStore = store.lock();
-            for (auto itr = doc.Begin(), end = doc.End(); itr != end; ++itr)
+            for (auto itr = accountsInDoc.Begin(), end = accountsInDoc.End(); itr != end; ++itr)
             {
                 const auto &val = *itr;
                 accounts.push_back(
@@ -101,7 +117,7 @@ namespace Quacks
       void write()
       {
         FILE *fp = nullptr;
-        FOPEN(fp, storeFilePath.c_str(), "w");
+        FOPEN(fp, storeFilePath.c_str(), "wb");
 
         if (fp == nullptr)
         {
@@ -123,6 +139,12 @@ namespace Quacks
         rapidjson::StringBuffer buffer;
         rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
+        writer.StartObject();
+        writer.Key("key");
+        writer.String(key.c_str());
+        writer.Key("secret");
+        writer.String(secret.c_str());
+        writer.Key("accounts");
         writer.StartArray();
         for (const auto &account : accounts)
         {
@@ -135,6 +157,13 @@ namespace Quacks
             writer.EndObject();
         }
         writer.EndArray();
+        writer.EndObject();
+
+        if (!mcbdes.McbEncrypt(buffer.GetString()))
+        {
+          throw std::exception();
+        }
+        fwrite(mcbdes.McbGetCryptogram(), 1, mcbdes.McbGetCryptogramSize(), fp);
 
         fclose(fp);
       }
@@ -198,17 +227,16 @@ Quacks::Twit::FileAccountStore::FileAccountStore(const std::string &filename)
 }
 
 Quacks::Twit::FileAccountStore::FileAccountStore(const std::string &filename, const std::string &key, const std::string &secret, const std::string &pass)
-  : impl(new Impl(filename, key, secret))
+  : impl(new Impl(filename, key, secret, pass))
 {
-  impl->unlock(pass);
 }
 
 bool Quacks::Twit::FileAccountStore::unlock(const std::string &pass)
 {
-  return false;
+  return impl->unlock(pass);;
 }
 
 bool Quacks::Twit::FileAccountStore::isLocked()
 {
-  return true;
+  return !impl->unlocked;
 }
