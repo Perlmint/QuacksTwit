@@ -8,3 +8,5 @@ include/gen
 include/config.h
 def/ref
 build
+*~
+.DS_Store
