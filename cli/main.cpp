@@ -113,12 +113,22 @@ int main(int argc, const char *argv[])
     account = accounts.at(i);
   }
 
+  const auto &classic_table = std::ctype<char>::classic_table();
+  std::vector<std::ctype<char>::mask> multilineTable(classic_table, classic_table + std::ctype<char>::table_size);
+  multilineTable[' '] ^= std::ctype_base::space;
+  multilineTable['\t'] &= ~(std::ctype_base::space | std::ctype_base::cntrl);
+  multilineTable['\n'] &= ~(std::ctype_base::space);
+  multilineTable['\r'] &= ~(std::ctype_base::space);
+  std::locale originalLocale = std::cin.getloc();
+  std::locale multilineLocale(originalLocale, new std::ctype<char>(multilineTable.data()));
+
   while(true)
   {
     int menu;
+    std::cout << "Enter command" << std::endl;
     std::cout << "0 : quit" << std::endl;
     std::cout << "1 : timeline" << std::endl;
-    std::cout << "2 : update" << std::endl;
+    std::cout << "2 : update" << std::endl << ">> ";
     std::cin >> menu;
     switch(menu)
     {
@@ -142,7 +152,10 @@ int main(int argc, const char *argv[])
       Quacks::Twit::statuses::update update;
       update.account = account;
       std::string text;
+      std::cout << "Enter your status : ";
+      std::cin.imbue(multilineLocale);
       std::cin >> text;
+      std::cin.imbue(originalLocale);
       update.status(text);
       update([](std::shared_ptr<Quacks::Twit::Account> account, const std::string &ret) {
       });
