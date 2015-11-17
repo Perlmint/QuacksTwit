@@ -248,9 +248,32 @@ def print_method(header, body, prefix_ns, method_info):
     body.scope_out()
     body.writeln('{{')
     body.scope_in()
-    body.writeln('rapidjson::Document dom;')
-    body.writeln('dom.Parse(ret.c_str());')
-    
+    ret = value['ret']
+    if ret == 'str':
+        body.writeln('callback(account, ret);')
+    else:
+        body.writeln('rapidjson::Document dom;')
+        body.writeln('dom.Parse(ret.c_str());')
+
+        src_name = 'dom'
+        target_name = 'results'
+        body.writeln('{0} {1};', getType(ret), target_name);
+        is_ret_list = isListType(ret)
+        if is_ret_list:
+            body.writeln('{0}.resize({1}.Size());', target_name, src_name)
+            body.writeln('for (int i = 0, end = {0}.Size(); i < end; ++ i)',
+                         src_name)
+            body.writeln('{{')
+            body.scope_in()
+            src_name = '{0}[i]'.format(src_name)
+            target_name = '{0}.at(i)'.format(target_name)
+            ret = ret[:-2]
+
+        body.writeln('Parse{0}({1}, {2});', ret.title(), target_name, src_name)
+        if is_ret_list:
+            body.scope_out()
+            body.writeln('}}')
+        body.writeln('callback(account, results);')
     body.scope_out()
     body.writeln('}}')
     header.writeln('}};')
@@ -321,6 +344,10 @@ def gen_type(args):
                 def_body.scope_in()
 
                 def writeParseField(fld_type, fld_name, fld_name_org, doc):
+                    def_body.writeln('if ({0}.HasMember("{1}"))',
+                                     doc, fld_name_org)
+                    def_body.writeln('{{')
+                    def_body.scope_in()
                     if isListType(fld_type):
                         val_name = fld_name_org + '_val'
                         def_body.writeln('const rapidjson::Value &{2} =' + \
@@ -349,6 +376,8 @@ def gen_type(args):
                         def_body.writeln('Parse{0}({1}, {2}["{3}"]{4});',
                                          fld_type.title(), fld_name,
                                          doc, fld_name_org, postfix)
+                    def_body.scope_out()
+                    def_body.writeln('}}')
 
                 for field in define.items():
                     fld_name, fld_info = field[0], field[1]
