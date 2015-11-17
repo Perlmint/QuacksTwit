@@ -16,6 +16,7 @@ namespace Quacks
       std::string identifier() const;
 
       void *getAccount() const;
+      void endCreateAccount(const std::string &pin) {}
     private:
       void *account;
     };

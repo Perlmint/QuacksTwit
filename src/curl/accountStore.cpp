@@ -1,9 +1,12 @@
 #include <cstdio>
 #include <algorithm>
+#include <sstream>
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
+#include "curl_helper.h"
 #include "accountStore.h"
-#include "curl/account_curl.h"
+#include "account_curl.h"
+#include "oauthlib.h"
 #include "McbDES2.hpp"
 
 #ifdef _MSC_VER
@@ -29,8 +32,7 @@ namespace Quacks
       Impl(const std::string &filename, const std::string &key, const std::string &secret, const std::string &pass)
         : storeFilePath(filename)
         , storekey(pass)
-        , key(key)
-        , secret(secret)
+        , auth(key, secret)
         , unlocked(true)
       {
         write();
@@ -56,6 +58,7 @@ namespace Quacks
 
         return true;
       }
+
     private:
       void read()
       {
@@ -100,8 +103,8 @@ namespace Quacks
         accounts.clear();
         {
             const auto &accountsInDoc = doc["accounts"];
-            key = doc["key"].GetString();
-            secret = doc["secret"].GetString();
+            auth.setConsumerKey(doc["key"].GetString());
+            auth.setConsumerSecret(doc["secret"].GetString());
             auto sharedStore = store.lock();
             for (auto itr = accountsInDoc.Begin(), end = accountsInDoc.End(); itr != end; ++itr)
             {
@@ -124,7 +127,7 @@ namespace Quacks
         throw std::exception();
         }
 
-        std::unique_ptr<unsigned char[]> keybuffer(new unsigned char[key.length()]),
+        std::unique_ptr<unsigned char[]> keybuffer(new unsigned char[storekey.length()]),
           key2buffer(new unsigned char[storekey.length()]);
 
         memcpy(keybuffer.get(), storekey.c_str(), storekey.length());
@@ -141,9 +144,9 @@ namespace Quacks
 
         writer.StartObject();
         writer.Key("key");
-        writer.String(key.c_str());
+        writer.String(auth.getConsumerKey().c_str());
         writer.Key("secret");
-        writer.String(secret.c_str());
+        writer.String(auth.getConsumerSecret().c_str());
         writer.Key("accounts");
         writer.StartArray();
         for (const auto &account : accounts)
@@ -171,8 +174,7 @@ namespace Quacks
       std::vector< std::shared_ptr<Quacks::Twit::Account> > accounts;
       const std::string storeFilePath;
       std::string storekey;
-      std::string key;
-      std::string secret;
+      oAuth auth;
       bool unlocked = false;
       std::weak_ptr<FileAccountStore> store;
 
@@ -210,15 +212,35 @@ std::vector< std::shared_ptr<Quacks::Twit::Account> > Quacks::Twit::FileAccountS
 
 void Quacks::Twit::FileAccountStore::beginCreateAccount(const CreatingAccountResultCallback &callback)
 {
-  if (impl->secret.empty())
+  const std::string request_token_url("https://api.twitter.com/oauth/request_token");
+  CurlHelper helper(impl->auth, CurlHelper::RequestType::POST, request_token_url, "oauth_callback=oob");
+	
+  auto res = helper.perform();
+  if (res == CURLE_OK)
   {
-    callback(false, "", *this);
+    std::string ret = helper.getData();
+    std::string requestToken, requestSecret;
+    while (!ret.empty())
+    {
+      auto pos = ret.find('='), field_end = ret.find('&');
+      if (strncmp("oauth_token", ret.c_str(), pos) == 0)
+      {
+        requestToken.assign(ret.c_str() + pos, field_end - pos);
+      }
+      else if (strncmp("oauth_token_secret", ret.c_str(), pos) == 0)
+      {
+        requestSecret.assign(ret.c_str() + pos, field_end - pos);
+      }
+      ret.erase(0, field_end);
+    }
+    auto newAccount = new CurlAccount(requestToken, requestSecret, std::shared_ptr<FileAccountStore>(this));
+    impl->accounts.push_back(newAccount->shared_from_this());
+    callback(true, "https://api.twitter.com/oauth/authenticate?oauth_token=" + requestToken, newAccount->shared_from_this());
   }
-}
-
-std::shared_ptr<Quacks::Twit::Account> Quacks::Twit::FileAccountStore::endCreateAccount(const std::string &pin)
-{
-  return nullptr;
+  else
+  {
+    callback(false, curl_easy_strerror(res), nullptr);
+  }
 }
 
 Quacks::Twit::FileAccountStore::FileAccountStore(const std::string &filename)
@@ -239,4 +261,9 @@ bool Quacks::Twit::FileAccountStore::unlock(const std::string &pass)
 bool Quacks::Twit::FileAccountStore::isLocked()
 {
   return !impl->unlocked;
+}
+
+const void *Quacks::Twit::FileAccountStore::getData() const
+{
+  return &impl->auth;
 }

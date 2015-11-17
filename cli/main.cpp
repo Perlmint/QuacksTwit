@@ -61,6 +61,9 @@ int main(int argc, const char *argv[])
   }
 #endif
 
+  std::mutex mtx;
+  std::condition_variable cv;
+
   auto accounts = store->storedAccounts();
   std::shared_ptr<Quacks::Twit::Account> account(nullptr);
   int count = 0, i;
@@ -79,17 +82,31 @@ int main(int argc, const char *argv[])
     std::cin >> i;
     if (i == count)
     {
-      // create new account
+      std::unique_lock<std::mutex> lock(mtx);
+      store->beginCreateAccount([&cv, &account](bool success, const std::string &url, std::shared_ptr<Quacks::Twit::Account> newAccount) {
+        if (!success)
+        {
+          cv.notify_all();
+          return;
+        }
+
+        std::string pin;
+        std::cout << "URL : " << url << std::endl;
+        std::cout << "enter pin : " << std::endl;
+        std::cin >> pin;
+        account = newAccount;
+        newAccount->endCreateAccount(pin);
+        cv.notify_one();
+      });
+
+      cv.wait(lock);
     }
-  } while(i <= count);
+  } while(i > count || i < 0);
 
   if (!account)
   {
     account = accounts.at(i);
   }
-
-  std::mutex mtx;
-  std::condition_variable cv;
 
   std::unique_lock<std::mutex> lock(mtx);
 

@@ -98,12 +98,7 @@ namespace Quacks
 
       void beginCreateAccount(const CreatingAccountResultCallback &callback)
       {
-        callback(false, std::string(""), *this);
-      }
-
-      std::shared_ptr<Account> endCreateAccount(const std::string &pin)
-      {
-        return nullptr;
+        callback(false, std::string(""), nullptr);
       }
 
       bool waitGrant()
@@ -157,11 +152,6 @@ namespace Quacks
     void SystemAccountStore::beginCreateAccount(const CreatingAccountResultCallback &callback)
     {
       impl->beginCreateAccount(callback);
-    }
-
-    std::shared_ptr<Account> SystemAccountStore::endCreateAccount(const std::string &pin)
-    {
-      return impl->endCreateAccount(pin);
     }
 
     bool SystemAccountStore::waitGrant()

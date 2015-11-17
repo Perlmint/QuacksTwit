@@ -3,6 +3,7 @@
 #include "account.h"
 #include "accountStore.h"
 #include <memory>
+#include "oauthlib.h"
 
 namespace Quacks
 {
@@ -18,15 +19,19 @@ namespace Quacks
       std::string identifier() const;
       const std::string &getKey() const
       {
-        return key;
+        return auth.getOAuthTokenKey();
       }
       const std::string &getSecret() const
       {
-        return secret;
+        return auth.getOAuthTokenSecret();
       }
+      oAuth &getAuth()
+      {
+        return auth;
+      }
+      void endCreateAccount(const std::string &pin);
     private:
-      const std::string key;
-      const std::string secret;
+      oAuth auth;
       std::string username_cache;
       std::string identifier_cache;
       std::weak_ptr<FileAccountStore> store;
