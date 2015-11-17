@@ -90,20 +90,21 @@ int main(int argc, const char *argv[])
       store->beginCreateAccount([&cv, &account](bool success, const std::string &url, std::shared_ptr<Quacks::Twit::Account> newAccount) {
         if (!success)
         {
-          cv.notify_all();
+          std::cerr << url;
           return;
         }
 
         std::string pin;
+#if defined(WIN32)
+        ShellExecute(nullptr, nullptr, url.c_str(), nullptr, nullptr, SW_SHOW);
+#else
         std::cout << "URL : " << url << std::endl;
-        std::cout << "enter pin : " << std::endl;
+#endif
+        std::cout << "enter pin : ";
         std::cin >> pin;
         account = newAccount;
         newAccount->endCreateAccount(pin);
-        cv.notify_one();
       });
-
-      cv.wait(lock);
     }
   } while(i > count || i < 0);
 
@@ -112,20 +113,44 @@ int main(int argc, const char *argv[])
     account = accounts.at(i);
   }
 
-  std::unique_lock<std::mutex> lock(mtx);
-
-  Quacks::Twit::statuses::home_timeline timeline;
-  timeline.account = account;
-  timeline([&cv](std::shared_ptr<Quacks::Twit::Account> account, const std::deque<Quacks::Twit::twit> &ret) {
-    for (const auto &twit : ret)
+  while(true)
+  {
+    int menu;
+    std::cout << "0 : quit" << std::endl;
+    std::cout << "1 : timeline" << std::endl;
+    std::cout << "2 : update" << std::endl;
+    std::cin >> menu;
+    switch(menu)
     {
-      std::cout << twit.user.screen_name << "(@" << twit.user.user_id << ")" << std::endl;
-      std::cout << twit.text << std::endl;
+    case 0:
+      return 0;
+    case 1:
+    {
+      Quacks::Twit::statuses::home_timeline timeline;
+      timeline.account = account;
+      timeline([](std::shared_ptr<Quacks::Twit::Account> account, const std::deque<Quacks::Twit::twit> &ret) {
+      for (const auto &twit : ret)
+      {
+        std::cout << twit.user.screen_name << "(@" << twit.user.user_id << ")" << std::endl;
+        std::cout << twit.text << std::endl;
+      }
+      });
+      break;
     }
-    cv.notify_one();
-    });
+    case 2:
+    {
+      Quacks::Twit::statuses::update update;
+      update.account = account;
+      std::string text;
+      std::cin >> text;
+      update.status(text);
+      update([](std::shared_ptr<Quacks::Twit::Account> account, const std::string &ret) {
+      });
+      break;
+    }
+    }
+  }
 
-  cv.wait(lock);
   return 0;
 }
 
@@ -158,6 +183,7 @@ std::string getSecret(const std::string &message)
   std::cout << message;
   std::cin >> storePass;
   setStdinEcho(true);
+  std::cout << std::endl;
   return storePass;
 }
 
@@ -171,7 +197,7 @@ std::shared_ptr<Quacks::Twit::IAccountStore> openFileAccountStore()
 
   if (!isFileExists(storePath))
   {
-    store = Quacks::Twit::FileAccountStore::CreateAccountStore(storePath, getSecret("Application Key : "), getSecret("Application Secret : "), getSecret("Account Store Pass : "));
+    store = Quacks::Twit::FileAccountStore::CreateAccountStore(storePath, getSecret("Consumer Key : "), getSecret("Consumer Secret : "), getSecret("Account Store Pass : "));
   }
   else
   {

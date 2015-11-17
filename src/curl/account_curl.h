@@ -9,7 +9,7 @@ namespace Quacks
 {
   namespace Twit
   {
-    class CurlAccount : public Account
+    class CurlAccount : public Account, public std::enable_shared_from_this<CurlAccount>
     {
     public:
       CurlAccount(const std::string &key, const std::string &secret,

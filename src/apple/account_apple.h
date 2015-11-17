@@ -6,7 +6,7 @@ namespace Quacks
 {
   namespace Twit
   {
-    class AppleAccount : public Account
+    class AppleAccount : public Account, public std::enable_shared_from_this<AppleAccount>
     {
     public:
       AppleAccount(void *data);

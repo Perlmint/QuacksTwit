@@ -43,12 +43,12 @@ namespace Quacks
         return accounts;
       }
 
-      bool unlock(const std::string &key)
+      bool unlock(std::shared_ptr<FileAccountStore> &store, const std::string &key)
       {
         try
         {
           storekey = key;
-          read();
+          read(store);
           unlocked = true;
         }
         catch (std::exception e)
@@ -60,8 +60,9 @@ namespace Quacks
       }
 
     private:
-      void read()
+      void read(std::shared_ptr<FileAccountStore> &accountStore)
       {
+        store = accountStore;
         FILE *fp = nullptr;
         FOPEN(fp, storeFilePath.c_str(), "rb");
 
@@ -102,16 +103,17 @@ namespace Quacks
         doc.Parse(reinterpret_cast<const char *>(mcbdes.McbGetPlainText()));
         accounts.clear();
         {
-            const auto &accountsInDoc = doc["accounts"];
-            auth.setConsumerKey(doc["key"].GetString());
-            auth.setConsumerSecret(doc["secret"].GetString());
-            auto sharedStore = store.lock();
-            for (auto itr = accountsInDoc.Begin(), end = accountsInDoc.End(); itr != end; ++itr)
-            {
-                const auto &val = *itr;
-                accounts.push_back(
-                    (new CurlAccount(val["key"].GetString(), val["secret"].GetString(), sharedStore))->shared_from_this());
-            }
+          const auto &accountsInDoc = doc["accounts"];
+          auth.setConsumerKey(doc["key"].GetString());
+          auth.setConsumerSecret(doc["secret"].GetString());
+          auto sharedStore = store.lock();
+          for (auto itr = accountsInDoc.Begin(), end = accountsInDoc.End(); itr != end; ++itr)
+          {
+            const auto &val = *itr;
+            auto newAccount = new CurlAccount(val["key"].GetString(), val["secret"].GetString(), sharedStore);
+            accounts.push_back(std::shared_ptr<Account>(newAccount));
+            newAccount->getAuth().setOAuthScreenName(val["screen_name"].GetString());
+          }
         }
 
         fclose(fp);
@@ -151,13 +153,15 @@ namespace Quacks
         writer.StartArray();
         for (const auto &account : accounts)
         {
-            auto curlAccount = std::dynamic_pointer_cast<CurlAccount>(account);
-            writer.StartObject();
-            writer.Key("key");
-            writer.String(curlAccount->getKey().c_str());
-            writer.Key("secret");
-            writer.String(curlAccount->getSecret().c_str());
-            writer.EndObject();
+          auto curlAccount = std::dynamic_pointer_cast<CurlAccount>(account);
+          writer.StartObject();
+          writer.Key("key");
+          writer.String(curlAccount->getKey().c_str());
+          writer.Key("secret");
+          writer.String(curlAccount->getSecret().c_str());
+          writer.Key("screen_name");
+          writer.String(curlAccount->getAuth().getOAuthScreenName().c_str());
+          writer.EndObject();
         }
         writer.EndArray();
         writer.EndObject();
@@ -213,8 +217,8 @@ std::vector< std::shared_ptr<Quacks::Twit::Account> > Quacks::Twit::FileAccountS
 void Quacks::Twit::FileAccountStore::beginCreateAccount(const CreatingAccountResultCallback &callback)
 {
   const std::string request_token_url("https://api.twitter.com/oauth/request_token");
-  CurlHelper helper(impl->auth, CurlHelper::RequestType::POST, request_token_url, "oauth_callback=oob");
-	
+  CurlHelper helper(impl->auth, CurlHelper::RequestType::POST, request_token_url, "");
+
   auto res = helper.perform();
   if (res == CURLE_OK)
   {
@@ -223,18 +227,27 @@ void Quacks::Twit::FileAccountStore::beginCreateAccount(const CreatingAccountRes
     while (!ret.empty())
     {
       auto pos = ret.find('='), field_end = ret.find('&');
+      if (pos == std::string::npos)
+      {
+        callback(false, ret, nullptr);
+        return;
+      }
+      if (field_end == std::string::npos)
+      {
+        field_end = ret.length();
+      }
       if (strncmp("oauth_token", ret.c_str(), pos) == 0)
       {
-        requestToken.assign(ret.c_str() + pos, field_end - pos);
+        requestToken.assign(ret.c_str() + pos + 1, field_end - pos - 1);
       }
       else if (strncmp("oauth_token_secret", ret.c_str(), pos) == 0)
       {
-        requestSecret.assign(ret.c_str() + pos, field_end - pos);
+        requestSecret.assign(ret.c_str() + pos + 1, field_end - pos - 1);
       }
-      ret.erase(0, field_end);
+      ret.erase(0, field_end + 1);
     }
-    auto newAccount = new CurlAccount(requestToken, requestSecret, std::shared_ptr<FileAccountStore>(this));
-    impl->accounts.push_back(newAccount->shared_from_this());
+    auto newAccount = new CurlAccount(requestToken, requestSecret, shared_from_this());
+    impl->accounts.push_back(std::shared_ptr<Account>(newAccount));
     callback(true, "https://api.twitter.com/oauth/authenticate?oauth_token=" + requestToken, newAccount->shared_from_this());
   }
   else
@@ -255,7 +268,7 @@ Quacks::Twit::FileAccountStore::FileAccountStore(const std::string &filename, co
 
 bool Quacks::Twit::FileAccountStore::unlock(const std::string &pass)
 {
-  return impl->unlock(pass);;
+  return impl->unlock(shared_from_this(), pass);
 }
 
 bool Quacks::Twit::FileAccountStore::isLocked()
@@ -266,4 +279,9 @@ bool Quacks::Twit::FileAccountStore::isLocked()
 const void *Quacks::Twit::FileAccountStore::getData() const
 {
   return &impl->auth;
+}
+
+void Quacks::Twit::FileAccountStore::save()
+{
+  impl->write();
 }

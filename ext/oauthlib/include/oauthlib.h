@@ -70,10 +70,6 @@ public:
                          const std::string& rawUrl, /* in */
                          const std::string& rawData, /* in */
                          const bool includeOAuthVerifierPin = false /* in */ );
-	oAuthKeyValueList getOAuthHeaderList(const eOAuthHttpRequestType eType,
-											  const std::string& rawUrl,
-											  const std::string& rawData,
-											  const bool includeOAuthVerifierPin = false);
 
     bool extractOAuthTokenKeySecret( const std::string& requestTokenResponse /* in */ );
 
@@ -102,7 +98,7 @@ private:
                                        const bool generateTimestamp /* in */ );
 
     void getStringFromOAuthKeyValuePairs( const oAuthKeyValuePairs& rawParamMap, /* in */
-                                          oAuthKeyValueList& rawParams, /* out */
+                                          std::string& rawParams, /* out */
                                           const std::string& paramsSeperator /* in */ );
 
     bool getSignature( const eOAuthHttpRequestType eType, /* in */

@@ -5,6 +5,7 @@ Quacks::Twit::CurlAccount::CurlAccount(const std::string &key,
                                        const std::string &secret,
                                        std::shared_ptr<FileAccountStore> store)
   : auth(*static_cast<const oAuth *>(store->getData()), key, secret)
+  , store(store)
 {
 }
 
@@ -33,7 +34,7 @@ void Quacks::Twit::CurlAccount::endCreateAccount(const std::string &pin)
 {
   auth.setOAuthPin(pin);
   const std::string accessTokenUrl = "https://api.twitter.com/oauth/access_token";
-  CurlHelper helper(auth, CurlHelper::RequestType::POST, accessTokenUrl);
+  CurlHelper helper(auth, CurlHelper::RequestType::POST, accessTokenUrl, "", true);
   if (helper.perform() == CURLE_OK)
   {
     std::string ret = helper.getData();
@@ -41,19 +42,28 @@ void Quacks::Twit::CurlAccount::endCreateAccount(const std::string &pin)
     while (!ret.empty())
     {
       auto pos = ret.find('='), field_end = ret.find('&');
+      if (pos == std::string::npos)
+      {
+        return;
+      }
+      if (field_end == std::string::npos)
+      {
+        field_end = ret.length();
+      }
       if (strncmp("oauth_token", ret.c_str(), pos) == 0)
       {
-        auth.setOAuthTokenKey(std::string(ret.c_str() + pos, field_end - pos));
+        auth.setOAuthTokenKey(std::string(ret.c_str() + pos + 1, field_end - pos - 1));
       }
       else if (strncmp("oauth_token_secret", ret.c_str(), pos) == 0)
       {
-        auth.setOAuthTokenSecret(std::string(ret.c_str() + pos, field_end - pos));
+        auth.setOAuthTokenSecret(std::string(ret.c_str() + pos + 1, field_end - pos - 1));
       }
-      else if (strncmp("screen_name", ret.c_str(), pos))
+      else if (strncmp("screen_name", ret.c_str(), pos) == 0)
       {
-        auth.setOAuthScreenName(std::string(ret.c_str() + pos, field_end - pos));
+        auth.setOAuthScreenName(std::string(ret.c_str() + pos + 1, field_end - pos - 1));
       }
-      ret.erase(0, field_end);
+      ret.erase(0, field_end + 1);
     }
   }
+  store.lock()->save();
 }

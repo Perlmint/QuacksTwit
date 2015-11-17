@@ -348,16 +348,7 @@ bool oAuth::getSignature( const eOAuthHttpRequestType eType,
 
     /* Build a string using key-value pairs */
     paramsSeperator = "&";
-	oAuthKeyValueList kvList;
-    getStringFromOAuthKeyValuePairs( rawKeyValuePairs, kvList, paramsSeperator );
-	for (const auto &item : kvList)
-	{
-		if (!rawParams.empty())
-		{
-			rawParams.push_back(',');
-		}
-		rawParams.append(item);
-	}
+    getStringFromOAuthKeyValuePairs( rawKeyValuePairs, rawParams, paramsSeperator );
 
     /* Start constructing base signature string. Refer http://dev.twitter.com/auth#intro */
     switch( eType )
@@ -439,26 +430,6 @@ std::string oAuth::getOAuthHeader(const eOAuthHttpRequestType eType,
                             const std::string& rawData,
                             const bool includeOAuthVerifierPin)
 {
-	oAuthKeyValueList list = std::move(getOAuthHeaderList(eType, rawUrl, rawData, includeOAuthVerifierPin));
-	std::string header;
-	
-	for (const auto &item : list)
-	{
-		if (!header.empty())
-		{
-			header.push_back(',');
-		}
-		header.append(item);
-	}
-	
-	return header;
-}
-
-oAuthKeyValueList oAuth::getOAuthHeaderList(const eOAuthHttpRequestType eType,
-                                            const std::string& rawUrl,
-                                            const std::string& rawData,
-                                            const bool includeOAuthVerifierPin)
-{
     oAuthKeyValuePairs rawKeyValuePairs;
     std::string rawParams;
     std::string oauthSignature;
@@ -466,7 +437,7 @@ oAuthKeyValueList oAuth::getOAuthHeaderList(const eOAuthHttpRequestType eType,
     std::string pureUrl( rawUrl );
 
     /* Clear header string initially */
-	std::list<std::string> oAuthHttpHeader;
+    std::list<std::string> oAuthHttpHeader;
     rawKeyValuePairs.clear();
 
     /* If URL itself contains ?key=value, then extract and put them in map */
@@ -500,12 +471,12 @@ oAuthKeyValueList oAuth::getOAuthHeaderList(const eOAuthHttpRequestType eType,
 
     /* Get OAuth header in string format */
     paramsSeperator = ",";
-    getStringFromOAuthKeyValuePairs( rawKeyValuePairs, oAuthHttpHeader, paramsSeperator );
+    getStringFromOAuthKeyValuePairs( rawKeyValuePairs, rawParams, paramsSeperator );
 
-    /* Build authorization header */
-    oAuthHttpHeader.push_front(oauth::OAUTH_AUTHHEADER_STRING);
+    std::string ret(oauth::OAUTH_AUTHHEADER_STRING);
+    ret.append(rawParams);
 
-    return oAuthHttpHeader;
+    return ret;
 }
 
 /*++
@@ -522,11 +493,12 @@ oAuthKeyValueList oAuth::getOAuthHeaderList(const eOAuthHttpRequestType eType,
 *
 *--*/
 void oAuth::getStringFromOAuthKeyValuePairs(const oAuthKeyValuePairs& rawParamMap,
-                                            oAuthKeyValueList& rawParams,
+                                            std::string& rawParams,
                                             const std::string& paramsSeperator)
 {
     rawParams.clear();
     std::string dummyStr;
+    oAuthKeyValueList list;
 
     /* Push key-value pairs to a list of strings */
     oAuthKeyValuePairs::const_iterator itMap = rawParamMap.begin();
@@ -543,11 +515,19 @@ void oAuth::getStringFromOAuthKeyValuePairs(const oAuthKeyValuePairs& rawParamMa
         {
             dummyStr.append( "\"" );
         }
-        rawParams.push_back( dummyStr );
+        list.push_back( dummyStr );
     }
 
     /* Sort key-value pairs based on key name */
-    rawParams.sort();
+    list.sort();
+	for (const auto &kv : list)
+	{
+		if (!rawParams.empty())
+		{
+			rawParams.append(paramsSeperator);
+		}
+		rawParams.append(kv);
+	}
 }
 
 /*++

@@ -22,7 +22,7 @@ namespace Quacks
         DEL
       };
 
-      CurlHelper(oAuth &auth, RequestType type, const std::string &url, const std::string &params = "");
+      CurlHelper(oAuth &auth, RequestType type, const std::string &url, const std::string &params = "", bool pinVerify = false);
 
       ~CurlHelper()
       {

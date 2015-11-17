@@ -13,7 +13,7 @@ namespace Quacks
   {
     class Account;
 
-    class IAccountStore : public std::enable_shared_from_this<IAccountStore>
+    class IAccountStore
     {
     public:
       using CreatingAccountResultCallback =
@@ -23,7 +23,7 @@ namespace Quacks
     };
 
 #if defined(USE_CURL)
-    class FileAccountStore : public IAccountStore
+    class FileAccountStore : public IAccountStore, public std::enable_shared_from_this<FileAccountStore>
     {
     public:
       static std::shared_ptr<FileAccountStore> GetAccountStore(const std::string &filename);
@@ -34,6 +34,7 @@ namespace Quacks
       bool unlock(const std::string &pass);
       bool isLocked();
       const void *getData() const;
+      void save();
     private:
       FileAccountStore(const std::string &filename);
       FileAccountStore(const std::string &filename, const std::string &key, const std::string &secret, const std::string &pass);
@@ -44,7 +45,7 @@ namespace Quacks
 #endif
 
 #if defined(USE_APPLE) || defined(USE_ANDROID)
-    class SystemAccountStore : public IAccountStore
+    class SystemAccountStore : public IAccountStore, public std::enable_shared_from_this<SystemAccountStore>
     {
     public:
 #ifdef USE_ANDROID
