@@ -145,7 +145,8 @@ if(USE_CURL)
   list(APPEND QUACKSTWIT_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/curl/account.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/curl/request.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/curl/accountStore.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/curl/accountStore.cpp
+    ${SRC_DIR}/curl/curl_helper.cpp)
 endif()
 
 add_library(QuacksTwit ${QUACKSTWIT_SRCS})
