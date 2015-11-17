@@ -32,7 +32,6 @@ namespace Quacks
       void endCreateAccount(const std::string &pin);
     private:
       oAuth auth;
-      std::string username_cache;
       std::string identifier_cache;
       std::weak_ptr<FileAccountStore> store;
     };

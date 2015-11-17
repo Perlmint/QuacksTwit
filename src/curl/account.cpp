@@ -11,7 +11,7 @@ Quacks::Twit::CurlAccount::CurlAccount(const std::string &key,
 
 std::string Quacks::Twit::CurlAccount::username() const
 {
-  return username_cache;
+  return auth.getOAuthScreenName();
 }
 
 std::string Quacks::Twit::CurlAccount::identifier() const
