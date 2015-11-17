@@ -1,6 +1,7 @@
 #include "request.h"
 #include "account_curl.h"
 #include "curl_helper.h"
+#include "urlencode.h"
 
 namespace Quacks
 {
@@ -25,7 +26,7 @@ namespace Quacks
           if (!kv.second.empty())
           {
             paramStr.push_back('=');
-            paramStr.append(kv.second);
+            paramStr.append(urlencode(kv.second));
           }
         }
 
