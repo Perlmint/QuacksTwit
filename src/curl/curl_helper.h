@@ -19,7 +19,7 @@ namespace Quacks
         Invalid = 0,
         GET,
         POST,
-        DELETE
+        DEL
       };
 
       CurlHelper(oAuth &auth, RequestType type, const std::string &url, const std::string &params = "");
