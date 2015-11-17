@@ -1,5 +1,6 @@
 #ifdef WIN32
 #include <Windows.h>
+#include <Shlwapi.h>
 #else
 #include <termios.h>
 #include <unistd.h>

@@ -163,10 +163,14 @@ if(USE_APPLE)
   set(exe_option MACOSX_BUNDLE)
 endif()
 
+if(WIN32)
+  list(APPEND QUACKSTWITCLI_LIBS Shlwapi.lib)
+endif()
+list(APPEND QUACKSTWITCLI_LIBS QuacksTwit)
 add_executable(QuacksTwitCli
   ${exe_option}
   ${QUACKSTWITCLI_SRCS})
-target_link_libraries(QuacksTwitCli QuacksTwit)
+target_link_libraries(QuacksTwitCli ${QUACKSTWITCLI_LIBS})
 
 if(USE_APPLE)
   set_target_properties(QuacksTwitCli PROPERTIES
