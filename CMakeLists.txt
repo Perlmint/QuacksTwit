@@ -132,27 +132,32 @@ gen(type
 configure_file(${INC_DIR}/config.h.in ${INC_DIR}/config.h)
 
 list(APPEND QUACKSTWIT_SRCS
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/accountStore.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/account.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/request.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/request.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/parseUtil.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/color.h)
+  ${INC_DIR}/accountStore.h
+  ${INC_DIR}/account.h
+  ${SRC_DIR}/request.h
+  ${SRC_DIR}/request.cpp
+  ${SRC_DIR}/parseUtil.h
+  ${INC_DIR}/color.h
+  ${SRC_DIR}/color_internal.h
+  ${INC_DIR}/config.h)
 
 if(USE_APPLE)
   list(APPEND QUACKSTWIT_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/apple/account.mm
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/apple/request.mm
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/apple/accountStore.mm)
+    ${SRC_DIR}/apple/account_apple.mm
+    ${SRC_DIR}/apple/account_apple.h
+    ${SRC_DIR}/apple/request_apple.mm
+    ${SRC_DIR}/apple/accountStore_apple.mm)
   list(APPEND QUACKSTWIT_LIBS ${ACCOUNTS_FW} ${SOCIAL_FW} ${DEFAULT_FW})
 endif()
 
 if(USE_CURL)
   list(APPEND QUACKSTWIT_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/curl/account.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/curl/request.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/curl/accountStore.cpp
-    ${SRC_DIR}/curl/curl_helper.cpp)
+    ${SRC_DIR}/curl/account_curl.cpp
+    ${SRC_DIR}/curl/account_curl.h
+    ${SRC_DIR}/curl/request_curl.cpp
+    ${SRC_DIR}/curl/accountStore_curl.cpp
+    ${SRC_DIR}/curl/curl_helper.cpp
+    ${SRC_DIR}/curl/curl_helper.h)
 endif()
 
 add_library(QuacksTwit ${QUACKSTWIT_SRCS})
