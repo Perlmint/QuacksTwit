@@ -24,33 +24,56 @@ typedef std::map<std::string, std::string> oAuthKeyValuePairs;
 class oAuth
 {
 public:
+    oAuth(const std::string &consumerKey, const std::string &consumerSecret);
+    oAuth(const oAuth &base, const std::string &accessToken, const std::string &accessTokenSecret);
     oAuth();
     ~oAuth();
 
     /* OAuth public methods used by twitCurl */
-    void getConsumerKey( std::string& consumerKey /* out */ );
+    const std::string &getConsumerKey() const
+    {
+        return m_consumerKey;
+    }
     void setConsumerKey( const std::string& consumerKey /* in */ );
 
-    void getConsumerSecret( std::string& consumerSecret /* out */ );
+    const std::string &getConsumerSecret() const
+    {
+        return m_consumerSecret;
+    }
     void setConsumerSecret( const std::string& consumerSecret /* in */ );
 
-    void getOAuthTokenKey( std::string& oAuthTokenKey /* out */ );
+    const std::string &getOAuthTokenKey() const
+    {
+        return m_oAuthTokenKey;
+    }
     void setOAuthTokenKey( const std::string& oAuthTokenKey /* in */ );
 
-    void getOAuthTokenSecret( std::string& oAuthTokenSecret /* out */ );
+    const std::string &getOAuthTokenSecret() const
+    {
+        return m_oAuthTokenSecret;
+    }
     void setOAuthTokenSecret( const std::string& oAuthTokenSecret /* in */ );
 
-    void getOAuthScreenName( std::string& oAuthScreenName /* out */ );
+    const std::string &getOAuthScreenName() const
+    {
+        return m_oAuthScreenName;
+    }
     void setOAuthScreenName( const std::string& oAuthScreenName /* in */ );
 
-    void getOAuthPin( std::string& oAuthPin /* out */ );
+    const std::string &getOAuthPin() const
+    {
+        return m_oAuthPin;
+    }
     void setOAuthPin( const std::string& oAuthPin /* in */ );
 
-    bool getOAuthHeader( const eOAuthHttpRequestType eType, /* in */
+    std::string getOAuthHeader( const eOAuthHttpRequestType eType, /* in */
                          const std::string& rawUrl, /* in */
                          const std::string& rawData, /* in */
-                         std::string& oAuthHttpHeader, /* out */
                          const bool includeOAuthVerifierPin = false /* in */ );
+	oAuthKeyValueList getOAuthHeaderList(const eOAuthHttpRequestType eType,
+											  const std::string& rawUrl,
+											  const std::string& rawData,
+											  const bool includeOAuthVerifierPin = false);
 
     bool extractOAuthTokenKeySecret( const std::string& requestTokenResponse /* in */ );
 
@@ -78,8 +101,8 @@ private:
                                        oAuthKeyValuePairs& keyValueMap /* out */,
                                        const bool generateTimestamp /* in */ );
 
-    bool getStringFromOAuthKeyValuePairs( const oAuthKeyValuePairs& rawParamMap, /* in */
-                                          std::string& rawParams, /* out */
+    void getStringFromOAuthKeyValuePairs( const oAuthKeyValuePairs& rawParamMap, /* in */
+                                          oAuthKeyValueList& rawParams, /* out */
                                           const std::string& paramsSeperator /* in */ );
 
     bool getSignature( const eOAuthHttpRequestType eType, /* in */

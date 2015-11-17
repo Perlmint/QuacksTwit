@@ -33,6 +33,20 @@ oAuth::~oAuth()
 {
 }
 
+oAuth::oAuth(const std::string &consumerKey, const std::string &consumerSecret)
+  : m_consumerKey(consumerKey)
+  , m_consumerSecret(consumerSecret)
+{
+}
+
+oAuth::oAuth(const oAuth &base, const std::string &accessToken, const std::string &accessTokenSecret)
+  : m_consumerKey(base.m_consumerKey)
+  , m_consumerSecret(base.m_consumerSecret)
+  , m_oAuthTokenKey(accessToken)
+  , m_oAuthTokenSecret(accessTokenSecret)
+{
+}
+
 /*++
 * @method: oAuth::clone
 *
@@ -57,22 +71,6 @@ oAuth oAuth::clone()
     return cloneObj;
 }
 
-
-/*++
-* @method: oAuth::getConsumerKey
-*
-* @description: this method gives consumer key that is being used currently
-*
-* @input: none
-*
-* @output: consumer key
-*
-*--*/
-void oAuth::getConsumerKey( std::string& consumerKey )
-{
-    consumerKey = m_consumerKey;
-}
-
 /*++
 * @method: oAuth::setConsumerKey
 *
@@ -86,21 +84,6 @@ void oAuth::getConsumerKey( std::string& consumerKey )
 void oAuth::setConsumerKey( const std::string& consumerKey )
 {
     m_consumerKey.assign( consumerKey );
-}
-
-/*++
-* @method: oAuth::getConsumerSecret
-*
-* @description: this method gives consumer secret that is being used currently
-*
-* @input: none
-*
-* @output: consumer secret
-*
-*--*/
-void oAuth::getConsumerSecret( std::string& consumerSecret )
-{
-    consumerSecret = m_consumerSecret;
 }
 
 /*++
@@ -119,21 +102,6 @@ void oAuth::setConsumerSecret( const std::string& consumerSecret )
 }
 
 /*++
-* @method: oAuth::getOAuthTokenKey
-*
-* @description: this method gives OAuth token (also called access token) that is being used currently
-*
-* @input: none
-*
-* @output: OAuth token
-*
-*--*/
-void oAuth::getOAuthTokenKey( std::string& oAuthTokenKey )
-{
-    oAuthTokenKey = m_oAuthTokenKey;
-}
-
-/*++
 * @method: oAuth::setOAuthTokenKey
 *
 * @description: this method saves OAuth token that should be used
@@ -146,21 +114,6 @@ void oAuth::getOAuthTokenKey( std::string& oAuthTokenKey )
 void oAuth::setOAuthTokenKey( const std::string& oAuthTokenKey )
 {
     m_oAuthTokenKey = oAuthTokenKey;
-}
-
-/*++
-* @method: oAuth::getOAuthTokenSecret
-*
-* @description: this method gives OAuth token secret that is being used currently
-*
-* @input: none
-*
-* @output: OAuth token secret
-*
-*--*/
-void oAuth::getOAuthTokenSecret( std::string& oAuthTokenSecret )
-{
-    oAuthTokenSecret = m_oAuthTokenSecret;
 }
 
 /*++
@@ -179,21 +132,6 @@ void oAuth::setOAuthTokenSecret( const std::string& oAuthTokenSecret )
 }
 
 /*++
-* @method: oAuth::getOAuthScreenName
-*
-* @description: this method gives authorized user's screenname
-*
-* @input: none
-*
-* @output: screen name
-*
-*--*/
-void oAuth::getOAuthScreenName( std::string& oAuthScreenName )
-{
-    oAuthScreenName = m_oAuthScreenName;
-}
-
-/*++
 * @method: oAuth::setOAuthScreenName
 *
 * @description: this method sets authorized user's screenname
@@ -206,21 +144,6 @@ void oAuth::getOAuthScreenName( std::string& oAuthScreenName )
 void oAuth::setOAuthScreenName( const std::string& oAuthScreenName )
 {
     m_oAuthScreenName = oAuthScreenName;
-}
-
-/*++
-* @method: oAuth::getOAuthPin
-*
-* @description: this method gives OAuth verifier PIN
-*
-* @input: none
-*
-* @output: OAuth verifier PIN
-*
-*--*/
-void oAuth::getOAuthPin( std::string& oAuthPin )
-{
-    oAuthPin = m_oAuthPin;
 }
 
 /*++
@@ -425,7 +348,16 @@ bool oAuth::getSignature( const eOAuthHttpRequestType eType,
 
     /* Build a string using key-value pairs */
     paramsSeperator = "&";
-    getStringFromOAuthKeyValuePairs( rawKeyValuePairs, rawParams, paramsSeperator );
+	oAuthKeyValueList kvList;
+    getStringFromOAuthKeyValuePairs( rawKeyValuePairs, kvList, paramsSeperator );
+	for (const auto &item : kvList)
+	{
+		if (!rawParams.empty())
+		{
+			rawParams.push_back(',');
+		}
+		rawParams.append(item);
+	}
 
     /* Start constructing base signature string. Refer http://dev.twitter.com/auth#intro */
     switch( eType )
@@ -502,11 +434,30 @@ bool oAuth::getSignature( const eOAuthHttpRequestType eType,
 * @output: oAuthHttpHeader - OAuth header
 *
 *--*/
-bool oAuth::getOAuthHeader( const eOAuthHttpRequestType eType,
+std::string oAuth::getOAuthHeader(const eOAuthHttpRequestType eType,
                             const std::string& rawUrl,
                             const std::string& rawData,
-                            std::string& oAuthHttpHeader,
-                            const bool includeOAuthVerifierPin )
+                            const bool includeOAuthVerifierPin)
+{
+	oAuthKeyValueList list = std::move(getOAuthHeaderList(eType, rawUrl, rawData, includeOAuthVerifierPin));
+	std::string header;
+	
+	for (const auto &item : list)
+	{
+		if (!header.empty())
+		{
+			header.push_back(',');
+		}
+		header.append(item);
+	}
+	
+	return header;
+}
+
+oAuthKeyValueList oAuth::getOAuthHeaderList(const eOAuthHttpRequestType eType,
+                                            const std::string& rawUrl,
+                                            const std::string& rawData,
+                                            const bool includeOAuthVerifierPin)
 {
     oAuthKeyValuePairs rawKeyValuePairs;
     std::string rawParams;
@@ -515,7 +466,7 @@ bool oAuth::getOAuthHeader( const eOAuthHttpRequestType eType,
     std::string pureUrl( rawUrl );
 
     /* Clear header string initially */
-    oAuthHttpHeader = "";
+	std::list<std::string> oAuthHttpHeader;
     rawKeyValuePairs.clear();
 
     /* If URL itself contains ?key=value, then extract and put them in map */
@@ -549,13 +500,12 @@ bool oAuth::getOAuthHeader( const eOAuthHttpRequestType eType,
 
     /* Get OAuth header in string format */
     paramsSeperator = ",";
-    getStringFromOAuthKeyValuePairs( rawKeyValuePairs, rawParams, paramsSeperator );
+    getStringFromOAuthKeyValuePairs( rawKeyValuePairs, oAuthHttpHeader, paramsSeperator );
 
     /* Build authorization header */
-    oAuthHttpHeader.assign( oauth::OAUTH_AUTHHEADER_STRING );
-    oAuthHttpHeader.append( rawParams );
+    oAuthHttpHeader.push_front(oauth::OAUTH_AUTHHEADER_STRING);
 
-    return !oAuthHttpHeader.empty();
+    return oAuthHttpHeader;
 }
 
 /*++
@@ -571,21 +521,14 @@ bool oAuth::getOAuthHeader( const eOAuthHttpRequestType eType,
 * @remarks: internal method
 *
 *--*/
-bool oAuth::getStringFromOAuthKeyValuePairs( const oAuthKeyValuePairs& rawParamMap,
-                                             std::string& rawParams,
-                                             const std::string& paramsSeperator )
+void oAuth::getStringFromOAuthKeyValuePairs(const oAuthKeyValuePairs& rawParamMap,
+                                            oAuthKeyValueList& rawParams,
+                                            const std::string& paramsSeperator)
 {
-    rawParams = "";
-    if( rawParamMap.empty() )
-    {
-        return false;
-    }
-
-    oAuthKeyValueList keyValueList;
+    rawParams.clear();
     std::string dummyStr;
 
     /* Push key-value pairs to a list of strings */
-    keyValueList.clear();
     oAuthKeyValuePairs::const_iterator itMap = rawParamMap.begin();
     for( ; itMap != rawParamMap.end(); itMap++ )
     {
@@ -600,25 +543,11 @@ bool oAuth::getStringFromOAuthKeyValuePairs( const oAuthKeyValuePairs& rawParamM
         {
             dummyStr.append( "\"" );
         }
-        keyValueList.push_back( dummyStr );
+        rawParams.push_back( dummyStr );
     }
 
     /* Sort key-value pairs based on key name */
-    keyValueList.sort();
-
-    /* Now, form a string */
-    dummyStr = "";
-    oAuthKeyValueList::iterator itKeyValue = keyValueList.begin();
-    for( ; itKeyValue != keyValueList.end(); itKeyValue++ )
-    {
-        if( dummyStr.length() )
-        {
-            dummyStr.append( paramsSeperator );
-         }
-         dummyStr.append( itKeyValue->c_str() );
-    }
-    rawParams = dummyStr;
-    return !rawParams.empty();
+    rawParams.sort();
 }
 
 /*++
