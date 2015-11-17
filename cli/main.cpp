@@ -28,6 +28,9 @@ std::shared_ptr<Quacks::Twit::IAccountStore> openFileAccountStore();
 
 int main(int argc, const char *argv[])
 {
+#if defined(WIN32)
+  SetConsoleOutputCP(65001);
+#endif
   std::shared_ptr<Quacks::Twit::IAccountStore> store(nullptr);
 
   int index = 0, selectedIndex = 0;
